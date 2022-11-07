@@ -33,7 +33,7 @@ class SarcasmTestDataset(torch.utils.data.Dataset):
         item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
         return item
     def __len__(self):
-        return len(self.encodings)
+        return len(self.encodings.input_ids)
 
 def compute_metrics(p):
     pred, labels = p
@@ -52,8 +52,8 @@ def labels(x):
 
 
 if __name__ == '__main__':
-    path = '../../Data/Train_Dataset.csv'
-    path_test = '../../Data/Test_Dataset.csv'
+    path = './Data/Train_Dataset.csv'
+    path_test = './Data/Test_Dataset.csv'
 
     df = pd.read_csv(path)
     test = pd.read_csv(path_test)
@@ -63,8 +63,8 @@ if __name__ == '__main__':
 
     train_tweets = train['tweet'].values.tolist()
     train_labels = train['sarcastic'].values.tolist()
-    test_tweets = test['text'].values.tolist()
-
+    test_tweets = test['tweet'].values.tolist()
+    print('test_tweets: ', len(test_tweets))
     train_tweets, val_tweets, train_labels, val_labels = train_test_split(train_tweets, train_labels, 
                                                                         test_size=0.1,random_state=42,stratify=train_labels)
     model_name = 'detecting-Sarcasm'
@@ -76,11 +76,13 @@ if __name__ == '__main__':
     train_encodings = tokenizer(train_tweets, padding=True, truncation=True, max_length=512)
     val_encodings = tokenizer(val_tweets, padding=True, truncation=True, max_length=512)
     test_encodings = tokenizer(test_tweets, padding=True, truncation=True, max_length=512)
-
+    
+    print('test_encodings: ', len(test_encodings.input_ids))
+    
     train_dataset = SarcasmDataset(train_encodings, train_labels)
     val_dataset = SarcasmDataset(val_encodings, val_labels)
     test_dataset = SarcasmTestDataset(test_encodings)
-
+    print('Test Dataset: ', len(test_dataset))
     training_args = TrainingArguments(
         output_dir="output",
         evaluation_strategy="steps",
@@ -105,21 +107,24 @@ if __name__ == '__main__':
     trainer.evaluate()
 
     preds = trainer.predict(test_dataset=test_dataset)
-
+    print('model output preds: ', preds.predictions.shape)
+    
     probs = torch.from_numpy(preds[0]).softmax(1)
 
     predictions = probs.numpy()
 
     newdf = pd.DataFrame(predictions,columns=['Negative_1','Positive_2'])
 
+    print('predictions: ', predictions.shape)
     results = np.argmax(predictions,axis=1)
 
-    test['sarcastic'] = 0
-    test_tweets = test['tweet'].values.tolist() 
-    test_labels = test['sarcastic'].values.tolist() 
-    test_encodings = tokenizer(test_tweets,
-                            truncation=True, 
-                            padding=True,
-                            return_tensors = 'pt').to("cuda") 
-
-    f1_score(test_labels, test['sarcastic_result'])
+    # test['sarcastic'] = 0
+    # test_tweets = test['tweet'].values.tolist() 
+    test_labels = test['sarcastic']
+    # test_encodings = tokenizer(test_tweets,
+    #                         truncation=True, 
+    #                         padding=True,
+    #                         return_tensors = 'pt').to("cuda") 
+    print('results: ',results.shape)
+    print('test_labels: ',test_labels.shape)
+    print('test F1 Score: ', f1_score(test_labels, results))
