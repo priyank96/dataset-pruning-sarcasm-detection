@@ -33,7 +33,7 @@ class SarcasmTestDataset(torch.utils.data.Dataset):
         item = {key: torch.tensor(val[idx]) for key, val in self.encodings.items()}
         return item
     def __len__(self):
-        return len(self.encodings)
+        return len(self.encodings.input_ids)
 
 def compute_metrics(p):
     pred, labels = p
@@ -63,8 +63,8 @@ class CustomTrainer(Trainer):
 
 if __name__ == '__main__':
     # dataset address
-    train = pd.read_csv('../../Data/Train_Dataset.csv')
-    test = pd.read_csv('../../Data/Test_Dataset.csv')
+    train = pd.read_csv('./Data/Train_Dataset.csv')
+    test = pd.read_csv('./Data/Test_Dataset.csv')
 
     train_tweets = train['tweet'].values.tolist()
     train_labels = train['sarcastic'].values.tolist()
@@ -103,3 +103,9 @@ if __name__ == '__main__':
     trainer.train()
 
     trainer.evaluate()
+    preds = trainer.predict(test_dataset=test_dataset)
+    probs = torch.from_numpy(preds[0]).softmax(1)
+    predictions = probs.numpy()
+    results = np.argmax(predictions,axis=1)
+    test_labels = test['sarcastic']
+    print('test F1 Score: ', f1_score(test_labels, results))
