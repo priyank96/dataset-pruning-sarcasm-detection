@@ -108,4 +108,9 @@ if __name__ == '__main__':
     predictions = probs.numpy()
     results = np.argmax(predictions,axis=1)
     test_labels = test['sarcastic']
+    with open('out.csv','w') as f:
+        f.write("Tweet,prediction,true_label")
+        for row in zip(test['tweet'], results, test['sarcastic']):
+            print('"'+str(row[0])+'",'+str(row[1])+','+str(row[2]))
+            f.write('"'+str(row[0])+'",'+str(row[1])+','+str(row[2])+"\n")
     print('test F1 Score: ', f1_score(test_labels, results))
