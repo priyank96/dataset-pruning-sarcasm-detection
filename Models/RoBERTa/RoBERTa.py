@@ -103,11 +103,11 @@ class CustomTrainer(Trainer):
 if __name__ == '__main__':
     # dataset address
     train = pd.read_csv('./Data/isarcasm/train.csv')
-    test = pd.read_csv('./Data/isarcasm/train.csv')
-    reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
+    test = pd.read_csv('./Data/isarcasm/test.csv')
+    # reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
     # reddit_test = pd.read_csv(.'./Data/Foreign Datasets/test-balanced.csv')
     #drop the rows in which no comments are present
-    reddit_train.dropna(subset=['comment'], inplace=True)
+    # reddit_train.dropna(subset=['comment'], inplace=True)
     
     train_tweets = train['tweet'].values.tolist()
     train_labels = train['sarcastic'].values.tolist()
@@ -115,8 +115,8 @@ if __name__ == '__main__':
     test_tweets = test['tweet'].values.tolist()
     test_labels = test['sarcastic'].values.tolist()
 
-    train_tweets.extend(reddit_train['comment'].values.tolist()[0:10_000])
-    train_labels.extend(reddit_train['label'].values.tolist()[0:10_000])
+    # train_tweets.extend(reddit_train['comment'].values.tolist()[0:10_000])
+    # train_labels.extend(reddit_train['label'].values.tolist()[0:10_000])
 
     model_name = 'detecting-Sarcasm'
 
@@ -134,7 +134,7 @@ if __name__ == '__main__':
     # test_dataset = SarcasmTestDatasetSlow(test_tweets, tokenizer)
     
     training_args = TrainingArguments(
-        output_dir='./res', evaluation_strategy="steps", num_train_epochs=5, per_device_train_batch_size=32,
+        output_dir='./res', evaluation_strategy="steps", num_train_epochs=5, per_device_train_batch_size=64,
         per_device_eval_batch_size=1, warmup_steps=500, weight_decay=0.01, logging_dir='./logs4',
         load_best_model_at_end=True
     )
