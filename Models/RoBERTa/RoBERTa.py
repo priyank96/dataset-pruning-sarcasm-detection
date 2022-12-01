@@ -19,8 +19,9 @@ class SarcasmDatasetSlow(torch.utils.data.Dataset):
         self.labels = labels
 
     def __getitem__(self, idx):
-        encodings = self.tokenizer(self.text[idx], truncation=True, padding='max_length', return_tensors='pt', max_length=512)
-        
+        encodings = self.tokenizer(self.text[idx], truncation=True, padding='max_length', return_tensors='pt',
+                                   max_length=512)
+
         item = {key: torch.tensor(val[0]) for key, val in encodings.items()}
         item['labels'] = torch.tensor(self.labels[idx])
         return item
@@ -29,14 +30,15 @@ class SarcasmDatasetSlow(torch.utils.data.Dataset):
         return len(self.labels)
 
 
-## Test Dataset
+# Test Dataset
 class SarcasmTestDatasetSlow(torch.utils.data.Dataset):
     def __init__(self, text, tokenizer):
         self.text = text
         self.tokenizer = tokenizer
 
     def __getitem__(self, idx):
-        encodings = self.tokenizer(self.text[idx], truncation=True, padding='max_length', return_tensors='pt', max_length=512)
+        encodings = self.tokenizer(self.text[idx], truncation=True, padding='max_length', return_tensors='pt',
+                                   max_length=512)
         item = {key: torch.tensor(val[0]) for key, val in encodings.items()}
         return item
 
@@ -58,7 +60,7 @@ class SarcasmDataset(torch.utils.data.Dataset):
         return len(self.labels)
 
 
-## Test Dataset
+# Test Dataset
 class SarcasmTestDataset(torch.utils.data.Dataset):
     def __init__(self, encodings):
         self.encodings = encodings
@@ -106,12 +108,12 @@ if __name__ == '__main__':
     test = pd.read_csv('./Data/isarcasm/train.csv')
     reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
     # reddit_test = pd.read_csv(.'./Data/Foreign Datasets/test-balanced.csv')
-    #drop the rows in which no comments are present
+    # drop the rows in which no comments are present
     reddit_train.dropna(subset=['comment'], inplace=True)
-    
+
     train_tweets = train['tweet'].values.tolist()
     train_labels = train['sarcastic'].values.tolist()
-    
+
     test_tweets = test['tweet'].values.tolist()
     test_labels = test['sarcastic'].values.tolist()
 
@@ -123,7 +125,8 @@ if __name__ == '__main__':
     task = 'sentiment'
     MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL, num_labels=2, loss_function_params={"weight": [0.75, 0.25]}, model_max_length=512)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL, num_labels=2, loss_function_params={"weight": [0.75, 0.25]},
+                                              model_max_length=512)
 
     train_encodings = tokenizer(train_tweets, truncation=True, padding=True, return_tensors='pt')
     test_encodings = tokenizer(test_tweets, truncation=True, padding=True, return_tensors='pt')
@@ -132,7 +135,7 @@ if __name__ == '__main__':
     test_dataset = SarcasmDataset(test_encodings, test_labels)
     # train_dataset = SarcasmDatasetSlow(train_tweets, train_labels, tokenizer)
     # test_dataset = SarcasmTestDatasetSlow(test_tweets, tokenizer)
-    
+
     training_args = TrainingArguments(
         output_dir='./res', evaluation_strategy="steps", num_train_epochs=5, per_device_train_batch_size=32,
         per_device_eval_batch_size=1, warmup_steps=500, weight_decay=0.01, logging_dir='./logs4',
@@ -147,7 +150,7 @@ if __name__ == '__main__':
         model=model, args=training_args, train_dataset=train_dataset,
         eval_dataset=test_dataset,
         compute_metrics=compute_metrics,
-        tokenizer = tokenizer
+        tokenizer=tokenizer
     )
 
     # trainer.train("/home/ubuntu/anlp-project/res/checkpoint-5000")
