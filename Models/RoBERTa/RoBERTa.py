@@ -105,7 +105,7 @@ class CustomTrainer(Trainer):
 if __name__ == '__main__':
     # dataset address
     train = pd.read_csv('./Data/isarcasm/train.csv')
-    test = pd.read_csv('./Data/isarcasm/train.csv')
+    test = pd.read_csv('./Data/isarcasm/test.csv')
     reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
     # reddit_test = pd.read_csv(.'./Data/Foreign Datasets/test-balanced.csv')
     # drop the rows in which no comments are present
