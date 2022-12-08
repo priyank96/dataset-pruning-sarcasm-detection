@@ -97,15 +97,20 @@ class CustomTrainer(Trainer):
         outputs = model(**inputs)
         logits = outputs.get('logits')
         # compute custom loss
-        loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([0.1, 0.3]))
+        # loss_fct = nn.CrossEntropyLoss()
+        loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([0.75, 0.25, 0.0]).to('cuda'))
+        # loss_fct = nn.MultiMarginLoss(p=2)
+        # loss_fct = nn.MultiMarginLoss(p=1)
+
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
         return (loss, outputs) if return_outputs else loss
 
 
 if __name__ == '__main__':
+    use_reddit = False
     # dataset address
-    train = pd.read_csv('./Data/isarcasm/train.csv')
-    test = pd.read_csv('./Data/isarcasm/test.csv')
+    train = pd.read_csv('./Data/Train_Dataset.csv')
+    test = pd.read_csv('./Data/Test_Dataset.csv')
     reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
     # reddit_test = pd.read_csv(.'./Data/Foreign Datasets/test-balanced.csv')
     # drop the rows in which no comments are present
@@ -117,16 +122,16 @@ if __name__ == '__main__':
     test_tweets = test['tweet'].values.tolist()
     test_labels = test['sarcastic'].values.tolist()
 
-    train_tweets.extend(reddit_train['comment'].values.tolist()[0:10_000])
-    train_labels.extend(reddit_train['label'].values.tolist()[0:10_000])
+    if use_reddit is True:
+        train_tweets.extend(reddit_train['comment'].values.tolist()[0:10_000])
+        train_labels.extend(reddit_train['label'].values.tolist()[0:10_000])
 
     model_name = 'detecting-Sarcasm'
 
     task = 'sentiment'
     MODEL = f"cardiffnlp/twitter-roberta-base-{task}"
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL, num_labels=2, loss_function_params={"weight": [0.75, 0.25]},
-                                              model_max_length=512)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL, num_labels=2, loss_function_params={"weight": [0.75, 0.25]})
 
     train_encodings = tokenizer(train_tweets, truncation=True, padding=True, return_tensors='pt')
     test_encodings = tokenizer(test_tweets, truncation=True, padding=True, return_tensors='pt')
@@ -138,7 +143,7 @@ if __name__ == '__main__':
 
     training_args = TrainingArguments(
         output_dir='./res', evaluation_strategy="steps", num_train_epochs=5, per_device_train_batch_size=32,
-        per_device_eval_batch_size=1, warmup_steps=500, weight_decay=0.01, logging_dir='./logs4',
+        per_device_eval_batch_size=64, warmup_steps=500, weight_decay=0.01, logging_dir='./logs4',
         load_best_model_at_end=True
     )
 
@@ -146,7 +151,7 @@ if __name__ == '__main__':
 
     model.save_pretrained(MODEL)
 
-    trainer = Trainer(
+    trainer = CustomTrainer(
         model=model, args=training_args, train_dataset=train_dataset,
         eval_dataset=test_dataset,
         compute_metrics=compute_metrics,

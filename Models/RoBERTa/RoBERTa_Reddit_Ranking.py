@@ -137,8 +137,7 @@ if __name__ == '__main__':
 
     training_args = TrainingArguments(
         output_dir='./res', evaluation_strategy="no", num_train_epochs=5, per_device_train_batch_size=32,
-        per_device_eval_batch_size=1, warmup_steps=500, weight_decay=0.01, logging_dir='./logs4',
-        load_best_model_at_end=True
+        per_device_eval_batch_size=64, warmup_steps=500, weight_decay=0.01, logging_dir='./logs4'
     )
 
     model = AutoModelForSequenceClassification.from_pretrained(MODEL)
@@ -155,7 +154,7 @@ if __name__ == '__main__':
     # trainer.train("/home/ubuntu/anlp-project/res/checkpoint-5000")
     trainer.train()
 
-    trainer.evaluate()
+    # trainer.evaluate()
     preds = trainer.predict(test_dataset=test_dataset)
     probs = torch.from_numpy(preds[0]).softmax(1)
     predictions = probs.numpy()
