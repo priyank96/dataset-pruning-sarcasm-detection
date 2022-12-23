@@ -98,8 +98,8 @@ class CustomTrainer(Trainer):
         logits = outputs.get('logits')
         # compute custom loss
         # loss_fct = nn.CrossEntropyLoss()
-        loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([0.75, 0.25, 0.0]).to('cuda'))
-        # loss_fct = nn.MultiMarginLoss(p=2)
+        # loss_fct = nn.CrossEntropyLoss(weight=torch.tensor([0.75, 0.25, 0.0]).to('cuda'))
+        loss_fct = nn.MultiMarginLoss(p=2)
         # loss_fct = nn.MultiMarginLoss(p=1)
 
         loss = loss_fct(logits.view(-1, self.model.config.num_labels), labels.view(-1))
@@ -107,14 +107,10 @@ class CustomTrainer(Trainer):
 
 
 if __name__ == '__main__':
-    use_reddit = False
+    use_reddit = True
     # dataset address
     train = pd.read_csv('./Data/Train_Dataset.csv')
     test = pd.read_csv('./Data/Test_Dataset.csv')
-    reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
-    # reddit_test = pd.read_csv(.'./Data/Foreign Datasets/test-balanced.csv')
-    # drop the rows in which no comments are present
-    reddit_train.dropna(subset=['comment'], inplace=True)
 
     train_tweets = train['tweet'].values.tolist()
     train_labels = train['sarcastic'].values.tolist()
@@ -123,6 +119,20 @@ if __name__ == '__main__':
     test_labels = test['sarcastic'].values.tolist()
 
     if use_reddit is True:
+        reddit_train = pd.read_csv('./Data/Foreign Datasets/train-balanced-sarcasm.csv', delimiter=',')
+        # reddit_test = pd.read_csv(.'./Data/Foreign Datasets/test-balanced.csv')
+        # drop the rows in which no comments are present
+        reddit_train.dropna(subset=['comment'], inplace=True)
+        print(reddit_train.info())
+        print('*******************')
+        pruning_labels = pd.read_csv('./Data/reddit_train_classifications.csv', delimiter=',')
+        reddit_train = pd.concat([reddit_train.reset_index(drop=True), pruning_labels.reset_index(drop=True)], axis=1)
+        print(reddit_train.info())
+        print("reddit train NaNs: ", reddit_train.isna().sum())
+        reddit_train = reddit_train[reddit_train['true_label'] != reddit_train['model_label']]
+        reddit_train = reddit_train.sort_values(by='model_prob', ascending=True)
+
+        # reddit_train = reddit_train.sample(n=10_000)
         train_tweets.extend(reddit_train['comment'].values.tolist()[0:10_000])
         train_labels.extend(reddit_train['label'].values.tolist()[0:10_000])
 
